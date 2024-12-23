@@ -1,0 +1,20 @@
+syntax = "proto3";  // 指定protobuf版本
+package pbfile; // 包名
+option go_package = "./services"; // 指定生成go代码的路径
+
+message User{   //我们通过message关键字定义一个消息类型，注意消息字段定义是会要求填写标示值
+  string name=1;
+  optional string email=2; //optional表示该字段不是必须的,可以不填
+  repeated string phone=3; //repeated表示该字段可以重复,如果重复了,那么返回的数组长度就是重复的次数
+}
+
+message UserList{  //message支持嵌套
+  repeated User user=1;
+  message college{
+    string name=1;
+  }
+}
+
+service UserService{  //我们也可以用service定义一个服务
+  rpc GetUser(User) returns (User); //rpc定义一个rpc方法,参数是User类型,返回值也是User类型
+}

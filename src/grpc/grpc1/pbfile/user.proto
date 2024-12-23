@@ -1,0 +1,17 @@
+/*
+@author: fengxu
+@since: 2024-12-22
+@desc: //TODO
+*/
+syntax = "proto3";  // 指定proto版本
+
+// option go_package = "path;name";  // 指定生成的go文件路径和包名
+option go_package = "../services";
+
+package pbfile;  // 指定包名
+
+message User {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+}

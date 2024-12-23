@@ -2,7 +2,6 @@ package _map
 
 import (
 	"fmt"
-	"hash/fnv"
 	"sync"
 )
 
@@ -100,74 +99,5 @@ func (cm *ChannelMap) PrintMap() {
 	defer cm.Unlock()
 	for k, v := range cm.m {
 		fmt.Println(k, v)
-	}
-}
-
-// SplitLockMap 基于分片加锁的线程安全map
-type SplitLockMap struct {
-	slices   []SplitSlice          // 切片数组
-	size     int                   // 切片的数量
-	hashFunc func(key string) uint // 哈希函数来确定key所在哪个切片中
-}
-
-// SplitSlice map里面的单个切片
-type SplitSlice struct {
-	m     map[string]string
-	mutex sync.RWMutex
-}
-
-func NewSplitLockMap(size int) *SplitLockMap {
-	slices := make([]SplitSlice, size)
-	for i := 0; i < size; i++ {
-		slices[i] = SplitSlice{m: make(map[string]string)}
-	}
-	return &SplitLockMap{slices: slices, size: size, hashFunc: fnvHash64}
-}
-
-func fnvHash64(key string) uint {
-	h := fnv.New64()
-	h.Write([]byte(key))
-	return uint(h.Sum64())
-}
-
-func (s *SplitLockMap) Set(key, value string) {
-	index := s.hashFunc(key) % uint(s.size)
-	s.slices[index].mutex.Lock()
-	defer s.slices[index].mutex.Unlock()
-	s.slices[index].m[key] = value
-}
-
-func (s *SplitLockMap) Get(key string) (string, bool) {
-	index := s.hashFunc(key) % uint(s.size)
-	s.slices[index].mutex.RLock()
-	defer s.slices[index].mutex.RUnlock()
-	val, ok := s.slices[index].m[key]
-	return val, ok
-}
-
-func (s *SplitLockMap) Delete(key string) {
-	index := s.hashFunc(key) % uint(s.size)
-	s.slices[index].mutex.Lock()
-	defer s.slices[index].mutex.Unlock()
-	delete(s.slices[index].m, key)
-}
-
-func (s *SplitLockMap) Len() int {
-	var length int
-	for _, slice := range s.slices {
-		slice.mutex.RLock()
-		length += len(slice.m)
-		slice.mutex.RUnlock()
-	}
-	return length
-}
-
-func (s *SplitLockMap) PrintMap() {
-	for _, slice := range s.slices {
-		slice.mutex.RLock()
-		for k, v := range slice.m {
-			fmt.Println(k, v)
-		}
-		slice.mutex.RUnlock()
 	}
 }
